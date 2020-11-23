@@ -59,7 +59,7 @@
                         <el-button type="primary" class="el-icon-edit" size="mini" @click="editUser(scope.row)"></el-button>
                         <el-button type="danger" class="el-icon-delete" size="mini" @click="deleteUser(scope.row)"></el-button>
                         <el-tooltip class="item" effect="dark" content="修改角色权限" placement="top" :enterable="false">
-                            <el-button type="warning" class="el-icon-setting" size="mini"></el-button>
+                            <el-button type="warning" class="el-icon-setting" size="mini" @click="modifyRoleRight(scope.row)"></el-button>
                         </el-tooltip>
                     </template>
                 </el-table-column>
@@ -121,6 +121,28 @@
                 <el-button type="primary" @click="confirmEdit">确 定</el-button>
             </span>
         </el-dialog>
+        <!-- 修改角色权限对话框 -->
+        <el-dialog
+          title="修改角色权限"
+          :visible.sync="roleRightDialogVisible"
+          width="50%"
+          @close="resetModifyRole">
+          <p>当前用户：{{ userInfo.username }}</p>
+          <p>当前用户：{{ userInfo.role_name }}</p>
+          <p>当前用户：<el-select v-model="selectRoleId" placeholder="请选择">
+              <el-option
+                v-for="item in roleList"
+                :key="item.id"
+                :label="item.roleName"
+                :value="item.id">
+              </el-option>
+            </el-select>
+          </p>
+          <span slot="footer" class="dialog-footer">
+            <el-button @click="roleRightDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="modifyRole">确 定</el-button>
+          </span>
+        </el-dialog>
     </div>
 </template>
 
@@ -153,6 +175,8 @@ export default {
       total: 0,
       // 控制添加用户对话框的显示
       dialogVisible: false,
+      // 控制修改角色权限对话框的显示
+      roleRightDialogVisible: false,
       // 添加表单数据
       addForm: {
         username: '',
@@ -195,7 +219,13 @@ export default {
           { required: true, message: '请输入手机号码', trigger: 'blur' },
           { validator: mobileCheck, trigger: 'blur' }
         ]
-      }
+      },
+      // 修改角色权限对话框 用户信息
+      userInfo: {},
+      // 角色列表
+      roleList: [],
+      // 已选中的角色id
+      selectRoleId: ''
     }
   },
   created () {
@@ -316,6 +346,36 @@ export default {
       this.$message.success('删除成功！')
       this.queryInfo.pagenum = Math.ceil((this.total - 1) / this.queryInfo.pagesize)
       this.getUserList()
+    },
+    // 修改角色权限
+    async modifyRoleRight (role) {
+      this.userInfo = role
+      // 获取所有角色列表
+      const { data: res } = await this.$http.get('roles')
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取角色列表失败！')
+      }
+      this.roleList = res.data
+      this.roleRightDialogVisible = true
+    },
+    // 提交修改角色权限
+    async modifyRole () {
+      if (!this.selectRoleId) {
+        return this.$message.error('请选择要修改的角色')
+      }
+      const { data: res } = await this.$http.put(`users/${this.userInfo.id}/role`, {
+        rid: this.selectRoleId
+      })
+      if (res.meta.status !== 200) {
+        return this.$message.error('修改角色失败！')
+      }
+      this.$message.success('修改角色成功！')
+      this.getUserList()
+      this.roleRightDialogVisible = false
+    },
+    // 关闭修改角色对话框，清除已选中的角色id
+    resetModifyRole () {
+      this.selectRoleId = ''
     }
   }
 }
