@@ -344,7 +344,8 @@ export default {
         return this.$message.error('删除失败！')
       }
       this.$message.success('删除成功！')
-      this.queryInfo.pagenum = Math.ceil((this.total - 1) / this.queryInfo.pagesize)
+      // 判断删除的是否是最后一页，如果是，则修改
+      this.queryInfo.pagenum = this.queryInfo.pagenum === Math.ceil(this.total / this.queryInfo.pagesize) ? Math.ceil(this.total / this.queryInfo.pagesize) : this.queryInfo.pagenum
       this.getUserList()
     },
     // 修改角色权限
